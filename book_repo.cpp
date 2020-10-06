@@ -129,7 +129,7 @@ Book::~Book() {
 //NOW WE BEGIN EVERYTHING ABOUT THE REPOSITORY CLASS
 const int num_books = 6; //this will correspond to the items on the student data table (number of unique students) V amounts of books down below
 
-string book_data[num_books] = { //this each set of strings and gives it its own spot on the book_data array
+string book_data[num_books] = { //this takes each set of strings and gives it its own spot on the book_data array
     "F1,Blood Guts & Gore,Ima Fruitcake,39.95,42,37.99,FICTION",
     "N2,Forensics for Housewives,Genevieve Valentin,123.45,99.99,199,NONFICTION",
     "F3,Slipping on Bananas: Iron Part II,Jon Q. Nobody,29.75,32.90,54,FICTION",
@@ -138,9 +138,108 @@ string book_data[num_books] = { //this each set of strings and gives it its own 
     "N6,Sage & the Infinite Inbox,Sage,1000,999,987.99,NONFICTION"
 };
 
+//Repository class that takes everything and stores it all
+class Repository {
+public:
+    int last_index; //index of the last book in the repo
+    int capacity; //that max size of the repo
+    Book** books; //books is an array of pointers to books; so pointer* to pointer*, could also be done as Book* books[6];
+    Repository(); //empty constructor
+    Repository(int capacity); //sets max size when constructor used
+    void parse_add(string datarow); //parses the book_data strings, creates them as Book objects, and adds them to the repository.
+    void print_all(); //prints all books in the repo using each book's print method
+    bool remove(string bookID); //is going to remove a book based on book id
+    void print_avg_price(string bookID); //prints a specific books avg price
+    void print_invalid_prices(); //Locates and prints invalid prices
+    void print_by_booktype(BookType btype); //prints all books by specified type
+    ~Repository(); //Destructor that destroys the repo
+};
+
+Repository::Repository() { //empty constructor that sets all attributes to default values
+    this->capacity = 0;
+    this->last_index = -1; //this means its empty
+    this->books = nullptr;
+}
+
+Repository::Repository(int capacity) { //sets max cap of repo
+    this->capacity = capacity; //inflexible, initializes the repo with this limited value
+    this->last_index = -1; //again, empty
+    this->books = new Book * [capacity]; 
+}
+
+void Repository::parse_add(string datarow) {
+    if (last_index < capacity) {
+        last_index += 1;
+        double temp_price_array[Book::priceArraySize]; //temp array to hold prices for each book
+        //Tests if fiction or nonfiction using book ID, cannot create anything of type 'Book'
+        //Makes the appropriate object now using constructor
+        //WILL PROBABLY NEED TO ADD A SECTION FOR PARSING THE ENUM TYPE FOR THE FINAL PROJECT
+        if (datarow[0] == 'F') {
+            this->books[last_index] = new Book();
+            books[last_index]->set_btype(FICTION);
+        }
+        else if (datarow[0] == 'N') {
+            this->books[last_index] = new Book();
+            books[last_index]->set_btype(NONFICTION);
+        }
+        else {
+            std::cerr << "INVALID BOOK TYPE - EXITING NOW\n";
+            exit(-1);
+        }
+
+        //Parses through each book string, seperating them at the comma that separates attributes
+        //We will then extract each of these substrings and set each as an attribute
+        //The below logic moves through each book_data string from left to right so, ID, TITLE, Author, Prices, BookType
+        //Sets the ID
+        int right_side = book_data[last_index].find(","); //named rightside because it is the right hand side of the substring, sits on the comma
+        books[last_index]->set_book_ID(book_data[last_index].substr(0, right_side));
+
+        //gets and sets the title
+        int left_side = right_side + 1; //the left side of the substring
+        right_side = book_data[last_index].find(",", left_side);
+        books[last_index]->set_title(book_data[last_index].substr(left_side, right_side - left_side));
+
+        //gets and sets the author
+        left_side = right_side + 1;
+        right_side = book_data[last_index].find(",", left_side);
+        books[last_index]->set_author(book_data[last_index].substr(left_side, right_side - left_side));
+
+        //gets the prices
+        //EAACH PRICE MUST BE CONVERTED TO A DOUBLE with stod() function
+        //element 1
+        left_side = right_side + 1;
+        right_side = book_data[last_index].find(",", left_side);
+        temp_price_array[0] = std::stod(book_data[last_index].substr(left_side, right_side - left_side));
+        //element2
+        left_side = right_side + 1;
+        right_side = book_data[last_index].find(",", left_side);
+        temp_price_array[1] = std::stod(book_data[last_index].substr(left_side, right_side - left_side));
+        //element3
+        left_side = right_side + 1;
+        right_side = book_data[last_index].find(",", left_side);
+        temp_price_array[2] = std::stod(book_data[last_index].substr(left_side, right_side - left_side));
+        //sets the prices
+        books[last_index]->set_prices(temp_price_array);
+    }
+    else {
+        std::cerr << "ERROR LIST HAS EXCEED MAX CAPACITY!\n EXITING NOW";
+        exit(-1);
+    }
+}
+
+void Repository::print_all() {
+    for (int i = 0; i <= this->last_index; i += 1) {
+        (this->books)[i]->print();
+    }
+}
 
 int main() {
-    
+    Repository* repo = new Repository(num_books); // MAKES THE REPOSITORY and REPO IS A POINTER TO IT
 
+    cout << "Parsing data and adding books: \t"; //Flavor text, \t is a horizontal tab
+    for (int i = 0; 1 < num_books; i += 1) {
+        repo->parse_add(book_data[i]); //Parses each line of the book data, adds them to the repo as book objects
+    }
+    cout << "DONE!" << std::endl;
 
 }
